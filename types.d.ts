@@ -4,6 +4,11 @@
 export function parseCSV(raw: string): string[][];
 
 /**
+ * Iterates over each line of a CSV.
+ */
+export function iterCSV(raw: string): Iterator<string[], void, void>;
+
+/**
  * High-level which reads a CSV from a {@link AsyncIterable} and converts it into chunks of CSV data.
  */
 export function streamCSV(r: AsyncIterable<string>): ReadableStream<string[]>;

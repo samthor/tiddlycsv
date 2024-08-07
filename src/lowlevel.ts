@@ -5,13 +5,18 @@ export function parseCSV(raw: string): string[][] {
   return s(raw, true);
 }
 
-export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string[][] {
+export function iterCSV(raw: string): Iterator<string[], void, void> {
+  const s = buildCSVChunkStreamer(true);
+
+  throw new Error('tODO');
+}
+
+export function buildCSVChunkStreamer(each?: boolean): (next: string, eof?: boolean) => string[][] {
   let source = '';
-  let pos = 0;
-  let inlineTemp = 0;
-  let nextIndexTemp = 0;
-  let codeAt = () => source.charCodeAt(pos);
-  let length = 0;
+  let pos: number;
+  let codeAt = (_?: any) => source.charCodeAt(pos);
+  let length: number;
+  let nextIndexTemp: number;
   let nextIndex = (c: string) =>
     (nextIndexTemp = source.indexOf(c, pos)) < 0 ? length : nextIndexTemp;
 
@@ -21,7 +26,8 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
     let consumed = 0;
     let output: string[][] = [];
     let currentRow: string[] = [];
-    let s = '';
+    let s: string;
+    let inlineTemp: number;
 
     source += next;
     length = source.length;
@@ -30,8 +36,8 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
     for (;;) {
       if (codeAt() === 34) {
         // if quote...
-        s = '';
         ++pos;
+        s = '';
 
         for (;;) {
           inlineTemp = nextIndex('"');
@@ -86,12 +92,15 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
 
       if (codeAt() === 10) {
         output.push(currentRow);
+        if (each) {
+          return output;
+        }
         currentRow = [];
-        consumed = pos + 1;
+        consumed = ++pos;
       } else {
         // we expect codeAt() to be 44 here
+        ++pos;
       }
-      ++pos;
     }
 
     // should not get here
@@ -99,4 +108,5 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
 }
 
 parseCSV satisfies typeof types.parseCSV;
+iterCSV satisfies typeof types.iterCSV;
 buildCSVChunkStreamer satisfies typeof types.buildCSVChunkStreamer;
