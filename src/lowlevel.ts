@@ -7,86 +7,77 @@ export function parseCSV(raw: string): string[][] {
 
 export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string[][] {
   let source = '';
-  let wasEof = false;
-
-  let nextIndexTemp = 0;
-  let inlineTemp = 0;
   let pos = 0;
-  let length = source.length;
-  let codeAt = () => (pos < length ? source.charCodeAt(pos) : -1);
+  let inlineTemp = 0;
+  let nextIndexTemp = 0;
+  let codeAt = () => source.charCodeAt(pos);
+  let length = 0;
   let nextIndex = (c: string) =>
     (nextIndexTemp = source.indexOf(c, pos)) < 0 ? length : nextIndexTemp;
-  let consumed = 0;
 
-  return (next: string, eof?: boolean) => {
-    let s = '';
+  return (next, eof) => {
+    let consumed = 0;
     let output: string[][] = [];
     let currentRow: string[] = [];
+    let s = '';
 
-    if (!wasEof) {
-      // @ts-ignore
-      wasEof ??= eof;
-      source += next;
-      pos = consumed = 0;
-      length = source.length;
+    source += next;
+    length = source.length;
+    pos = 0;
 
-      for (;;) {
-        while (codeAt() === 10) {
-          output.push(currentRow.splice(0, currentRow.length));
-          consumed = ++pos;
-        }
+    for (;;) {
+      if (codeAt() === 34) {
+        // if quote...
+        s = '';
+        ++pos;
 
-        if (codeAt() === -1) {
-          if (eof && currentRow.length) {
-            output.push(currentRow);
-          }
-          break;
-        }
-
-        // is quote?
-        if (codeAt() === 34) {
-          s = '';
-          ++pos;
-
-          for (;;) {
-            inlineTemp = nextIndex('"');
-            s += source.slice(pos, inlineTemp);
-
-            pos = inlineTemp + 1;
-            inlineTemp = codeAt();
-            if ([-1, 44, 10].includes(inlineTemp)) {
-              break; // end
-            }
-
-            // double-quote => one quote
-            // @ts-ignore you _can_ add a boolean to a number
-            pos += inlineTemp === 34;
-            s += '"';
+        for (;;) {
+          inlineTemp = nextIndex('"');
+          s += source.slice(pos, inlineTemp);
+          if (inlineTemp === source.length) {
+            pos = inlineTemp;
+            break; // no more data
           }
 
-          if (inlineTemp === -1 && !eof) {
-            break; // can't be sure we're done
-          }
-          currentRow.push(s);
-        } else {
-          inlineTemp = Math.min(nextIndex('\n'), nextIndex(','));
-          if (inlineTemp === length && !eof) {
-            break; // can't be sure we're done
+          pos = inlineTemp + 1; // move past quote
+          inlineTemp = codeAt();
+          if (inlineTemp === 44 || inlineTemp === 10) {
+            break; // end
           }
 
-          currentRow.push(source.slice(pos, inlineTemp));
-          pos = inlineTemp;
+          // double-quote => one quote
           // @ts-ignore you _can_ add a boolean to a number
-          pos += codeAt() === 44;
+          pos += inlineTemp === 34;
+          s += '"';
         }
+      } else {
+        // regular
+        inlineTemp = Math.min(nextIndex('\n'), nextIndex(','));
+        s = source.slice(pos, inlineTemp);
+        pos = inlineTemp;
       }
 
-      if (consumed) {
+      currentRow.push(s);
+
+      if (pos === source.length) {
+        if (eof) {
+          output.push(currentRow);
+        }
         source = source.slice(consumed);
+        return output;
       }
+
+      if (codeAt() === 10) {
+        output.push(currentRow);
+        currentRow = [];
+        consumed = pos + 1;
+      } else {
+        // we expect codeAt() to be 44 here
+      }
+      ++pos;
     }
 
-    return output;
+    // should not get here
   };
 }
 
