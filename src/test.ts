@@ -1,10 +1,10 @@
 import test from 'node:test';
 import * as assert from 'node:assert';
-import { buildCSVChunkStreamer2 } from './lowlevel.ts';
+import { buildCSVChunkStreamer } from './lowlevel.ts';
 import { streamCSV } from './highlevel.ts';
 
 const buildHandler = (cb: (data: string[][]) => void) => {
-  const s = buildCSVChunkStreamer2();
+  const s = buildCSVChunkStreamer();
   return (raw: string, eof: boolean) => {
     const out = s(raw, eof);
     cb(out);

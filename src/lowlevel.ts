@@ -15,6 +15,8 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
   let nextIndex = (c: string) =>
     (nextIndexTemp = source.indexOf(c, pos)) < 0 ? length : nextIndexTemp;
 
+  let newline = -1;
+
   return (next, eof) => {
     let consumed = 0;
     let output: string[][] = [];
@@ -34,7 +36,7 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
         for (;;) {
           inlineTemp = nextIndex('"');
           s += source.slice(pos, inlineTemp);
-          if (inlineTemp === source.length) {
+          if (inlineTemp === length) {
             pos = inlineTemp;
             break; // no more data
           }
@@ -42,7 +44,7 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
           pos = inlineTemp + 1; // move past quote
           inlineTemp = codeAt();
           if (inlineTemp === 44 || inlineTemp === 10) {
-            break; // end
+            break; // end, comma or newline after quote
           }
 
           // double-quote => one quote
@@ -52,18 +54,33 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
         }
       } else {
         // regular
-        inlineTemp = Math.min(nextIndex('\n'), nextIndex(','));
+        if (pos > newline) {
+          // recalc newline only if we went past it
+          newline = nextIndex('\n');
+        }
+        inlineTemp = nextIndex(',');
+        if (newline < inlineTemp) {
+          inlineTemp = newline;
+        }
+
         s = source.slice(pos, inlineTemp);
         pos = inlineTemp;
       }
 
       currentRow.push(s);
 
-      if (pos === source.length) {
+      if (pos === length) {
         if (eof) {
           output.push(currentRow);
+          source = '';
+          newline = -1;
+        } else if (consumed) {
+          source = source.slice(consumed);
+          newline -= consumed;
         }
-        source = source.slice(consumed);
+        if (newline === length) {
+          newline = source.lastIndexOf('\n');
+        }
         return output;
       }
 
