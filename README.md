@@ -1,7 +1,9 @@
 tiddlycsv is a small, streaming CSV parser.
-It's about ~1kb, has zero dependencies, and is tree-shakable.
+It's about ~1.3kb, has zero dependencies, and is tree-shakable.
 
-Doesn't care about headers, keyed rows, anything but strings. Just supports the CSV spec including multi-line and quoted strings.
+Doesn't care about headers, keyed rows, anything but strings.
+Just supports the CSV spec including multi-line and quoted strings.
+Supports `\r\n` as well as `\n`.
 
 ## Usage
 
@@ -39,6 +41,7 @@ papaparse: 1.083s (1.57x)
 ## Output
 
 Unlike other parsers, `tiddlycsv` will return empty strings for trailing commas and empty lines.
+It skips the last input line if it does not have any data.
 For the input data:
 
 ```csv

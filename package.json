@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "test": "tsx src/test.ts",
-    "prepublishOnly": "esbuild --bundle --format=esm --minify src/index.ts --outfile=dist.js"
+    "prepublishOnly": "esbuild --bundle --format=esm --minify src/index.ts --outfile=dist.js && cat dist.js | wc -c"
   },
   "types": "./types.d.ts",
   "exports": {
@@ -17,7 +17,7 @@
     }
   },
   "sideEffects": false,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Sam Thorogood <sam.thorogood@gmail.com>",
   "license": "Apache-2.0",
   "name": "tiddlycsv"

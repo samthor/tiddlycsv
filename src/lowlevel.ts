@@ -36,13 +36,19 @@ export function* iterCSV(raw: string, chunkSize = ITER_SIZE): Generator<string[]
 }
 
 export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string[][] {
+  let code: number;
   let source = '';
   let pos: number;
-  let codeAt = (_?: any) => source.charCodeAt(pos);
+  let codeAt = (off = 0) => (code = source.charCodeAt(pos - off));
   let length: number;
-  let nextIndexTemp: number;
-  let nextIndex = (c: string) =>
-    (nextIndexTemp = source.indexOf(c, pos)) < 0 ? length : nextIndexTemp;
+  let nextIndex = (c: string) => (pos = (pos = source.indexOf(c, pos)) < 0 ? length : pos);
+  let tempPos: number;
+  let sourceSliceByOff = (off: boolean | number) =>
+    source.slice(
+      tempPos,
+      // @ts-ignore you _can_ subtract a boolean from a number
+      pos - off,
+    );
 
   let newline = -1;
 
@@ -51,7 +57,6 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
     let output: string[][] = [];
     let currentRow: string[] = [];
     let s: string;
-    let inlineTemp: number;
 
     source += next;
     length = source.length;
@@ -64,44 +69,54 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
         s = '';
 
         for (;;) {
-          inlineTemp = nextIndex('"');
-          s += source.slice(pos, inlineTemp);
-          if (inlineTemp === length) {
-            pos = inlineTemp;
+          tempPos = pos;
+          nextIndex('"');
+          s += sourceSliceByOff(0);
+          if (pos === length) {
             break; // no more data
           }
 
-          pos = inlineTemp + 1; // move past quote
-          inlineTemp = codeAt();
-          if (inlineTemp === 44 || inlineTemp === 10) {
+          ++pos; // move past quote
+          if (codeAt() === 13) {
+            // found "\r", assume "\n" follows
+            ++pos;
+            codeAt();
+          }
+          if (code === 44 || code === 10) {
             break; // end, comma or newline after quote
           }
-
           // double-quote => one quote
           // @ts-ignore you _can_ add a boolean to a number
-          pos += inlineTemp === 34;
+          pos += code === 34;
           s += '"';
         }
       } else {
+        tempPos = pos;
+
         // regular
         if (pos > newline) {
           // recalc newline only if we went past it
           newline = nextIndex('\n');
+          pos = tempPos; // reset for below `nextIndex` call
         }
-        inlineTemp = nextIndex(',');
-        if (newline < inlineTemp) {
-          inlineTemp = newline;
+        nextIndex(',');
+        if (newline < pos) {
+          pos = newline;
         }
 
-        s = source.slice(pos, inlineTemp);
-        pos = inlineTemp;
+        // deal with \r\n
+        s = sourceSliceByOff(codeAt(1) === 13);
+        codeAt();
       }
 
       currentRow.push(s);
 
       if (pos === length) {
         if (eof) {
-          output.push(currentRow);
+          if (currentRow.length > 1 || s || code === 10) {
+            // only push if last row has fields, OR has an explicit newline
+            output.push(currentRow);
+          }
           source = '';
           newline = -1;
         } else if (consumed) {
@@ -114,7 +129,7 @@ export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string
         return output;
       }
 
-      if (codeAt() === 10) {
+      if (code === 10) {
         output.push(currentRow);
         currentRow = [];
         consumed = ++pos;

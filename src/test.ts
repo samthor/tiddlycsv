@@ -1,6 +1,6 @@
 import test from 'node:test';
 import * as assert from 'node:assert';
-import { buildCSVChunkStreamer, iterCSV } from './lowlevel.ts';
+import { buildCSVChunkStreamer, iterCSV, parseCSV } from './lowlevel.ts';
 import { streamCSV } from './highlevel.ts';
 
 const buildHandler = (cb: (data: string[][]) => void) => {
@@ -87,4 +87,10 @@ test('iter', async () => {
     ['hello', 'there'],
     ['1', '2', '3'],
   ]);
+});
+
+test('\\r\\n', async () => {
+  const raw = `hello,there\r\n1,2,3,"foo"\r\nbar`;
+  const all = parseCSV(raw);
+  assert.deepStrictEqual(all, [['hello', 'there'], ['1', '2', '3', 'foo'], ['bar']]);
 });
