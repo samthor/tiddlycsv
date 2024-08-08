@@ -12,12 +12,12 @@
   "types": "./types.d.ts",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.min.js"
+      "types": "./types.d.ts",
+      "import": "./dist.js"
     }
   },
   "sideEffects": false,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Sam Thorogood <sam.thorogood@gmail.com>",
   "license": "Apache-2.0",
   "name": "tiddlycsv"
