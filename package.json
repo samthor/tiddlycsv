@@ -6,9 +6,19 @@
   },
   "type": "module",
   "scripts": {
-    "test": "tsx test/"
+    "test": "tsx src/test.ts",
+    "prepublishOnly": "esbuild --bundle --format=esm --minify src/index.ts --outfile=dist.js"
   },
-  "private": true,
+  "types": "./types.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.min.js"
+    }
+  },
+  "sideEffects": false,
+  "version": "1.0.0",
   "author": "Sam Thorogood <sam.thorogood@gmail.com>",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "name": "tiddlycsv"
 }

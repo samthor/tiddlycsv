@@ -1,13 +1,15 @@
 import test from 'node:test';
 import * as assert from 'node:assert';
-import { buildCSVChunkStreamer } from './lowlevel.ts';
+import { buildCSVChunkStreamer, iterCSV } from './lowlevel.ts';
 import { streamCSV } from './highlevel.ts';
 
 const buildHandler = (cb: (data: string[][]) => void) => {
   const s = buildCSVChunkStreamer();
   return (raw: string, eof: boolean) => {
     const out = s(raw, eof);
-    cb(out);
+    for (const each of out) {
+      cb([each]);
+    }
   };
 };
 
@@ -71,4 +73,18 @@ test('rs', async () => {
   }
 
   assert.deepStrictEqual(all, [['hello', 'there', 'there']]);
+});
+
+test('iter', async () => {
+  const raw = `hello,there\n1,2,3`;
+  const all: string[][] = [];
+
+  const gen = iterCSV(raw, 5);
+  for (const row of gen) {
+    all.push(row);
+  }
+  assert.deepStrictEqual(all, [
+    ['hello', 'there'],
+    ['1', '2', '3'],
+  ]);
 });

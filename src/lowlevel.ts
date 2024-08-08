@@ -5,13 +5,37 @@ export function parseCSV(raw: string): string[][] {
   return s(raw, true);
 }
 
-export function iterCSV(raw: string): Iterator<string[], void, void> {
-  const s = buildCSVChunkStreamer(true);
+const ITER_SIZE = 1024;
 
-  throw new Error('tODO');
+export function* iterCSV(raw: string, chunkSize = ITER_SIZE): Generator<string[], void, void> {
+  if (chunkSize <= 0 || Math.round(chunkSize) !== chunkSize) {
+    throw new Error(`invalid chunkSize`);
+  }
+
+  let s = buildCSVChunkStreamer();
+
+  // just chunk raw
+  let length = raw.length;
+  let at = 0;
+  let done = false;
+  let end: number;
+  let out: string[][];
+  let each: string[];
+
+  do {
+    end = at + chunkSize;
+    if (end >= length) {
+      done = true;
+    }
+    out = s(raw.substring(at, end), done);
+    for (each of out) {
+      yield each;
+    }
+    at = end;
+  } while (!done);
 }
 
-export function buildCSVChunkStreamer(each?: boolean): (next: string, eof?: boolean) => string[][] {
+export function buildCSVChunkStreamer(): (next: string, eof?: boolean) => string[][] {
   let source = '';
   let pos: number;
   let codeAt = (_?: any) => source.charCodeAt(pos);
@@ -92,9 +116,6 @@ export function buildCSVChunkStreamer(each?: boolean): (next: string, eof?: bool
 
       if (codeAt() === 10) {
         output.push(currentRow);
-        if (each) {
-          return output;
-        }
         currentRow = [];
         consumed = ++pos;
       } else {
