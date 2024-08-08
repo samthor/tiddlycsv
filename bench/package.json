@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "but-csv": "^2.0.14",
+    "papaparse": "^5.4.1",
+    "udsv": "^0.5.3"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/papaparse": "^5.3.14",
+    "tsx": "^4.16.5"
+  }
+}

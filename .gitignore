@@ -1,4 +1,4 @@
-bench
+bench/*.csv
 dist.*
 .DS_Store
 node_modules/

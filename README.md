@@ -3,7 +3,7 @@ It's about ~1.3kb, has zero dependencies, and is tree-shakable.
 
 Doesn't care about headers, keyed rows, anything but strings.
 Just supports the CSV spec including multi-line and quoted strings.
-Supports `\r\n` as well as `\n`.
+Supports `\r\n` as well as `\n` for line separators only (i.e., won't rewrite `\r\n` to `\n` within multi-line strings).
 
 ## Usage
 
@@ -25,17 +25,18 @@ Includes types.
 - `writeCSV`: simple method that converts array data into CSV string output (call multiple times to "stream")
 
 In general, if the read helpers don't work for you, use `buildCSVChunkStreamer` and provide data your way.
-Minifying that method only is about ~0.5k.
+Minifying that method only is about ~0.55k.
 
 ## Speed
 
-It's very fast.
+It's fast for its size.
 To parse multiple copies of [1.csv](https://github.com/Keyang/csvbench/blob/master/1.csv):
 
 ```
-tiddlycsv: 689.38ms
-but-csv: 732.419ms (1.06x)
-papaparse: 1.083s (1.57x)
+tiddlycsv: 837.074ms (baseline) ~1.3kb
+udsv: 540.037ms (0.63x) ~5kb
+but-csv: 737.836ms (0.88x) ~0.5kb
+papaparse: 1.120s (1.34x) ~20kb
 ```
 
 ## Output
